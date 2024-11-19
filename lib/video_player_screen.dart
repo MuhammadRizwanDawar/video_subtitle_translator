@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
 
@@ -115,14 +116,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
     try {
       // Get the boundary
-      final boundary = _repaintBoundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      final boundary = _repaintBoundaryKey.currentContext?.findRenderObject()
+      as RenderRepaintBoundary?;
       if (boundary == null) return;
-
-      // Capture the full image
       final fullImage = await boundary.toImage(pixelRatio: 1.0); // or 2.0
-
-
-      // Create a rect from the points
       final rect = Rect.fromPoints(
         Offset(
           _startPoint!.dx.clamp(0, fullImage.width.toDouble()),
@@ -134,11 +131,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         ),
       );
 
-      // Create a picture recorder and canvas
       final recorder = ui.PictureRecorder();
-      final canvas = Canvas(recorder);
 
-      // Draw only the selected portion
+      final canvas = Canvas(recorder);
       canvas.clipRect(Rect.fromLTWH(0, 0, rect.width, rect.height));
       canvas.drawImage(
         fullImage,
@@ -146,21 +141,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         Paint(),
       );
 
-      // Convert to image
       final picture = recorder.endRecording();
       final croppedImage = await picture.toImage(
         rect.width.toInt(),
         rect.height.toInt(),
       );
-
-      // Convert to bytes
-      final byteData = await croppedImage.toByteData(format: ui.ImageByteFormat.png);
+      final byteData =
+      await croppedImage.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
 
-      // Save the file
+      // Save screenshot
       final directory = await getExternalStorageDirectory();
       if (directory == null) return;
-
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final filePath = '${directory.path}/screenshot_$timestamp.png';
       final file = File(filePath);
@@ -168,9 +160,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
       log('Screenshot saved to: $filePath');
 
-      // Clean up
+      // Extract text
+      final inputImage = InputImage.fromFilePath(filePath);
+      final textRecognizer = TextRecognizer();
+      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+
+      log('Extracted Text: ${recognizedText.text}');
+      for (TextBlock block in recognizedText.blocks) {
+        log('Block Text: ${block.text}');
+      }
+
       fullImage.dispose();
       croppedImage.dispose();
+      await textRecognizer.close();
     } catch (e) {
       log('Error capturing screenshot: $e');
     }
