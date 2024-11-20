@@ -6,17 +6,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:google_mlkit_translation/google_mlkit_translation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:video_subtitle_translator/utlis/rectanglecustom_painter.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoPath;
   final String? thumbnailPath;
+  final String sourceLanguage;
+  final String targetLanguage;
 
   const VideoPlayerScreen({
     Key? key,
     required this.videoPath,
     this.thumbnailPath,
+    required this.sourceLanguage,
+    required this.targetLanguage,
   }) : super(key: key);
 
   @override
@@ -39,6 +45,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   // For drawing rectangle
   Offset? _startPoint;
   Offset? _endPoint;
+  final textRecognizer = TextRecognizer();
+  late OnDeviceTranslator onDeviceTranslator;
+  String extractedText = '';
+  String translatedText = '';
+  bool showTextDisplay = false;
+  Offset textDisplayPosition = Offset.zero;
 
   // RepaintBoundary Key
   final GlobalKey _repaintBoundaryKey = GlobalKey();
@@ -51,6 +63,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     super.initState();
     _initializeVideoPlayer();
     _startScreenshotTimer();
+    _initializeTranslator();
   }
 
   @override
@@ -58,11 +71,24 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     _controller.dispose();
     _hideControlsTimer?.cancel();
     _screenshotTimer?.cancel();
+    textRecognizer.close();
+    onDeviceTranslator.close();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual,
         overlays: SystemUiOverlay.values);
     SystemChrome.setPreferredOrientations(
         [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     super.dispose();
+  }
+
+  void _initializeTranslator() {
+    onDeviceTranslator = OnDeviceTranslator(
+      sourceLanguage: TranslateLanguage.values.firstWhere(
+        (element) => element.bcpCode == widget.sourceLanguage,
+      ),
+      targetLanguage: TranslateLanguage.values.firstWhere(
+        (element) => element.bcpCode == widget.targetLanguage,
+      ),
+    );
   }
 
   Future<void> _initializeVideoPlayer() async {
@@ -117,7 +143,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     try {
       // Get the boundary
       final boundary = _repaintBoundaryKey.currentContext?.findRenderObject()
-      as RenderRepaintBoundary?;
+          as RenderRepaintBoundary?;
       if (boundary == null) return;
       final fullImage = await boundary.toImage(pixelRatio: 1.0); // or 2.0
       final rect = Rect.fromPoints(
@@ -147,11 +173,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         rect.height.toInt(),
       );
       final byteData =
-      await croppedImage.toByteData(format: ui.ImageByteFormat.png);
+          await croppedImage.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
 
       // Save screenshot
-      final directory = await getExternalStorageDirectory();
+      final directory = await getTemporaryDirectory();
       if (directory == null) return;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final filePath = '${directory.path}/screenshot_$timestamp.png';
@@ -163,7 +189,27 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       // Extract text
       final inputImage = InputImage.fromFilePath(filePath);
       final textRecognizer = TextRecognizer();
-      final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+      final RecognizedText recognizedText =
+          await textRecognizer.processImage(inputImage);
+
+      if (recognizedText.text.isNotEmpty) {
+        final translatedResult =
+            await onDeviceTranslator.translateText(recognizedText.text);
+
+        log('Original Text: ${recognizedText.text}');
+        log('Translated Text: $translatedResult');
+
+        setState(() {
+          extractedText = recognizedText.text;
+          translatedText = translatedResult;
+          showTextDisplay = true;
+
+          textDisplayPosition = Offset(
+            _endPoint!.dx + 10,
+            _startPoint!.dy,
+          );
+        });
+      }
 
       log('Extracted Text: ${recognizedText.text}');
       for (TextBlock block in recognizedText.blocks) {
@@ -175,6 +221,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       await textRecognizer.close();
     } catch (e) {
       log('Error capturing screenshot: $e');
+      log('Error in capture and translation: $e');
     }
   }
 
@@ -269,6 +316,47 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
+  Widget _buildTextDisplay() {
+    if (!showTextDisplay || translatedText.isEmpty) return const SizedBox.shrink();
+
+    return Positioned(
+      left: 10,
+      top: 20,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
+          maxHeight: 100,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.8),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+        ),
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Translation (${widget.targetLanguage}):',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              translatedText,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+
   Widget _buildProgressBar() {
     return SliderTheme(
       data: SliderThemeData(
@@ -314,13 +402,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       _endPoint = _startPoint;
     });
   }
+
   void _onPanEnd(DragEndDetails details) {
     if (_startPoint != null && _endPoint != null) {
-      // Capture screenshot after the rectangle is drawn
       _captureScreenshot();
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -336,10 +423,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       appBar: isFullscreen
           ? null
           : AppBar(
-        backgroundColor: Colors.black,
-        title: const Text('Video Player'),
-        elevation: 0,
-      ),
+              backgroundColor: Colors.black,
+              title: const Text('Video Player'),
+              elevation: 0,
+            ),
       body: SafeArea(
         child: Center(
           child: AspectRatio(
@@ -367,10 +454,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     ],
                   ),
                 ),
-
                 if (isBuffering)
                   const Center(child: CircularProgressIndicator()),
-
                 if (_showControls)
                   Container(
                     decoration: BoxDecoration(
@@ -428,8 +513,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                         Icons.replay_10,
                                         color: Colors.white,
                                       ),
-                                      onPressed: () =>
-                                          _seekRelative(const Duration(seconds: -10)),
+                                      onPressed: () => _seekRelative(
+                                          const Duration(seconds: -10)),
                                     ),
                                     IconButton(
                                       icon: Icon(
@@ -445,8 +530,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                         Icons.forward_10,
                                         color: Colors.white,
                                       ),
-                                      onPressed: () =>
-                                          _seekRelative(const Duration(seconds: 10)),
+                                      onPressed: () => _seekRelative(
+                                          const Duration(seconds: 10)),
                                     ),
                                     IconButton(
                                       icon: const Icon(
@@ -464,6 +549,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       ],
                     ),
                   ),
+                // Display the translated text at the top of the video player
+                _buildTextDisplay(),
               ],
             ),
           ),
@@ -472,29 +559,3 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
   }
 }
-
-class RectanglePainter extends CustomPainter {
-  final Offset? startPoint;
-  final Offset? endPoint;
-
-  RectanglePainter({this.startPoint, this.endPoint});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (startPoint == null || endPoint == null) return;
-
-    final paint = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    final rect = Rect.fromPoints(startPoint!, endPoint!);
-    canvas.drawRect(rect, paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) {
-    return true;
-  }
-}
-
