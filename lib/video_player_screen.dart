@@ -101,7 +101,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       _videoDuration = _controller.value.duration;
       setState(() {});
     } catch (e) {
-      print('Error initializing video player: $e');
+      log('Error initializing video player: $e');
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -549,7 +549,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                       ],
                     ),
                   ),
-                // Display the translated text at the top of the video player
                 _buildTextDisplay(),
               ],
             ),

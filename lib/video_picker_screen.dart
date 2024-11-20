@@ -5,7 +5,7 @@ import 'package:video_subtitle_translator/utlis/languages.dart';
 import 'package:video_subtitle_translator/video_player_screen.dart';
 
 class VideoPickerScreen extends StatefulWidget {
-  const VideoPickerScreen({Key? key}) : super(key: key);
+  const VideoPickerScreen({super.key});
 
   @override
   _VideoPickerScreenState createState() => _VideoPickerScreenState();
@@ -232,7 +232,6 @@ class _VideoPickerScreenState extends State<VideoPickerScreen> {
 
     final picker = ImagePicker();
     final pickedFile = await picker.pickVideo(source: ImageSource.gallery);
-
     if (pickedFile?.path != null && mounted) {
       Navigator.push(
         context,
