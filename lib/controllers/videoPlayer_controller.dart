@@ -82,11 +82,11 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
       // Cancel any ongoing timers
       _hideControlsTimer?.cancel();
       _screenshotTimer?.cancel();
-      // Pause and dispose of existing controller if it exists
-        await _controller?.pause();
-        await _controller?.dispose();
-      // Reset all state variables
-      _isDisposed = false;
+
+      // Safely pause and dispose of the controller
+      await _controller.pause();
+      await _controller.dispose();
+          _isDisposed = false;
       _showControls = true;
       _isFullscreen = false;
       _isMuted = false;
@@ -95,16 +95,21 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
       _currentPosition = Duration.zero;
       _isBuffering = false;
       _isDraggingProgressBar = false;
+
       // Reset rectangle-related state as well
       _startPoint = null;
       _endPoint = null;
       _isRectangleDrawn = false;
+
       // Reset text-related states
       resetTranslationState();
-      // Close resources
-      await textRecognizer.close();
-      await onDeviceTranslator.close();
-      notifyListeners();
+      // Close resources safely
+      try {
+        await textRecognizer.close();
+        await onDeviceTranslator.close();
+      } catch (e) {
+        log('Error closing resources during reset: $e');
+      }
     } catch (e) {
       log('Error during controller reset: $e');
     }
@@ -124,20 +129,19 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     }
     try {
       _controller = VideoPlayerController.file(videoFile);
-      await _controller!.initialize();
-      _videoDuration = _controller!.value.duration;
-      _controller!.addListener(
+      await _controller.initialize();
+      _videoDuration = _controller.value.duration;
+      _controller.addListener(
         () {
-          if (_controller == null) return;
-          _currentPosition = _controller!.value.position;
+          _currentPosition = _controller.value.position;
           if (_currentPosition >= _videoDuration) {
             _isPlaying = false;
-            _controller!.pause();
+            _controller.pause();
           }
-          notifyListeners();
+
         },
       );
-      await _controller!.play();
+      await _controller.play();
       _showControls = false;
       resetHideControlsTimer();
       _isPlaying = true;
@@ -187,7 +191,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
           await croppedImage.toByteData(format: ui.ImageByteFormat.png);
       if (byteData == null) return;
       final directory = await getTemporaryDirectory();
-      if (directory == null) return;
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       final filePath = '${directory.path}/screenshot_$timestamp.png';
       final file = File(filePath);
@@ -310,7 +313,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
   }
 
   void changePlaybackSpeed() {
-    if (_controller == null || !_controller.value.isInitialized) return;
+    if (!_controller.value.isInitialized) return;
     final speeds = [0.5, 1.0, 1.5, 2.0];
     final currentIndex = speeds.indexOf(_playbackSpeed);
     _playbackSpeed = speeds[(currentIndex + 1) % speeds.length];
@@ -384,17 +387,17 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
   }
 
   void seekRelative(Duration duration) {
-    if (isDisposed || _controller == null) return;
-    _currentPosition = _controller!.value.position;
+    if (isDisposed) return;
+    _currentPosition = _controller.value.position;
     final newPosition = _currentPosition + duration;
     if (newPosition < Duration.zero) {
-      _controller!.seekTo(Duration.zero);
+      _controller.seekTo(Duration.zero);
       _currentPosition = Duration.zero;
     } else if (newPosition > _videoDuration) {
-      _controller!.seekTo(_videoDuration);
+      _controller.seekTo(_videoDuration);
       _currentPosition = _videoDuration;
     } else {
-      _controller!.seekTo(newPosition);
+      _controller.seekTo(newPosition);
       _currentPosition = newPosition;
     }
 
@@ -410,8 +413,14 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
   }
 
   Future<void> disposing() async {
-    await _controller.pause();
-    await _controller.dispose();
+    if (!_isDisposed) {
+      try {
+        await _controller.pause();
+        await _controller.dispose();
+      } catch (e) {
+        log('Error while disposing controller: $e');
+      }
+    }
     notifyListeners();
   }
 
@@ -419,29 +428,43 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
   void dispose() {
     if (_isDisposed) return;
     _isDisposed = true;
+
+    // Pause and reset controller safely
     _controller.pause();
-    resetTranslationState();
     _controller.seekTo(Duration.zero);
+    _controller.dispose();
+
+    //reset translation
+    resetTranslationState();
+
+
     // Clean up resources
     _hideControlsTimer?.cancel();
     _screenshotTimer?.cancel();
-    textRecognizer.close();
-    onDeviceTranslator.close();
-    _controller.dispose();
-    // Reset properties
-    _videoDuration = Duration.zero;
-    _currentPosition = Duration.zero;
-    _isBuffering = false;
-    _isDraggingProgressBar = false;
-    _isRectangleDrawn = false;
-    _showTextDisplay = false;
-    _textDisplayPosition = Offset.zero;
-    _showControls = false;
-    _translatedText = '';
-    _extractedText = '';
-    _isPlaying = false;
-    _isFullscreen = false;
-    _isMuted = false;
+    try {
+      textRecognizer.close();
+      onDeviceTranslator.close();
+    } catch (e) {
+      log('Error closing resources: $e');
+    }
+    //
+    //
+    // // Reset properties
+    // _videoDuration = Duration.zero;
+    // _currentPosition = Duration.zero;
+    // _isBuffering = false;
+    // _isDraggingProgressBar = false;
+    // _isRectangleDrawn = false;
+    // _showTextDisplay = false;
+    // _textDisplayPosition = Offset.zero;
+    // _showControls = false;
+    // _translatedText = '';
+    // _extractedText = '';
+    // _isPlaying = false;
+    // _isFullscreen = false;
+    // _isMuted = false;
+
+
     notifyListeners();
     super.dispose();
   }

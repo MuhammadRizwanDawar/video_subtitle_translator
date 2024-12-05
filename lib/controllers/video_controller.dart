@@ -12,7 +12,7 @@ class LanguageChooseController extends ChangeNotifier {
   final Map<String, String> languageNames = LanguagesList().languageNames;
   List<String> languages = LanguagesList().languages;
 
-  String? selectedVideoPath; // Add a property to store selected video path
+  String? selectedVideoPath;
 
 
   final OnDeviceTranslatorModelManager modelManager =
@@ -141,8 +141,6 @@ class LanguageChooseController extends ChangeNotifier {
       );
     }
   }
-
-
   // Get the selected video path from the controller
   String? getSelectedVideoPath() {
     return selectedVideoPath;

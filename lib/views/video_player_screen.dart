@@ -15,46 +15,43 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerControllerProvider controller;
+  late VideoPlayerControllerProvider controllerdis;
   late LanguageChooseController languageChooseController;
-
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      languageChooseController =
-          Provider.of<LanguageChooseController>(context, listen: false);
-      controller =
-          Provider.of<VideoPlayerControllerProvider>(context, listen: false);
-      String? getSelectedVideoPath = languageChooseController
-          .getSelectedVideoPath();
-      if (getSelectedVideoPath != null && getSelectedVideoPath.isNotEmpty) {
-        controller.initializeTranslator(
-            languageChooseController.sourceLanguage,
-            languageChooseController.targetLanguage
-        );
-        controller.initializeController(
-            getSelectedVideoPath, controller.onDeviceTranslator);
-      } else {
-        log("No video path selected.");
-      }
-    });
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        languageChooseController =
+            Provider.of<LanguageChooseController>(context, listen: false);
+        controllerdis =
+            Provider.of<VideoPlayerControllerProvider>(context, listen: false);
+        String? getSelectedVideoPath =
+            languageChooseController.getSelectedVideoPath();
+        if (getSelectedVideoPath != null && getSelectedVideoPath.isNotEmpty) {
+          controllerdis.initializeTranslator(
+              languageChooseController.sourceLanguage,
+              languageChooseController.targetLanguage);
+          controllerdis.initializeController(
+              getSelectedVideoPath, controllerdis.onDeviceTranslator);
+        } else {
+          log("No video path selected.");
+        }
+      },
+    );
   }
-
 
   @override
   void dispose() {
-    controller.disposing();
+    controllerdis.disposing();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // Access the controller and get the selected video path
     final controller = Provider.of<LanguageChooseController>(context);
     final videoPath = controller.getSelectedVideoPath();
-
     if (videoPath == null) {
       return Scaffold(
         appBar: AppBar(title: const Text("Error")),
@@ -67,7 +64,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         child: Center(
           child: Consumer<VideoPlayerControllerProvider>(
             builder: (context, controller, _) {
-              if (!controller.controller!.value.isInitialized) {
+              if (!controller.controller.value.isInitialized) {
                 return const CircularProgressIndicator();
               }
               return AspectRatio(
@@ -78,9 +75,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     alignment: Alignment.center,
                     children: [
                       Consumer<VideoPlayerControllerProvider>(
-                          builder: (context, controller, _) {
-                            return VideoPlayer(controller.controller);
-                          }),
+                        builder: (context, controller, _) {
+                          if (controller.controller.value.isInitialized) {
+                            return VideoPlayer(controller.controller!);
+                          }
+
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        },
+                      ),
                       Consumer<VideoPlayerControllerProvider>(
                         builder: (context, controller, _) {
                           return GestureDetector(
@@ -94,8 +97,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                                 startPoint: controller.startPoint,
                                 endPoint: controller.endPoint,
                               ),
-                              child:
-                              Container(color: Colors.transparent),
+                              child: Container(color: Colors.transparent),
                             ),
                           );
                         },
@@ -120,16 +122,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     if (controller.translatedText.isEmpty) {
       return const SizedBox.shrink();
     }
-
     return Positioned(
       left: 10,
       top: 20,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery
-              .of(context)
-              .size
-              .width * 0.8, // 80% of screen width
+          maxWidth: MediaQuery.of(context).size.width * 0.8,
         ),
         decoration: BoxDecoration(
           color: Colors.black.withOpacity(0.8),
@@ -149,7 +147,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // Use Flexible widget to handle dynamic content height
             Flexible(
               child: Text(
                 controller.translatedText.isEmpty
@@ -160,8 +157,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                   fontSize: 16,
                 ),
                 overflow: TextOverflow.visible,
-                // Allow text to overflow properly
-                softWrap: true, // Allow line breaks for longer text
+                softWrap: true,
               ),
             ),
           ],
