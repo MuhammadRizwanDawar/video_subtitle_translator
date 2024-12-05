@@ -69,7 +69,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
 
   // RepaintBoundary Key
   final GlobalKey _repaintBoundaryKey = GlobalKey();
-
   GlobalKey get repaintBoundaryKey => _repaintBoundaryKey;
 
   VideoPlayerControllerProvider() {
@@ -138,7 +137,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
             _isPlaying = false;
             _controller.pause();
           }
-
         },
       );
       await _controller.play();
@@ -340,7 +338,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     if (isDisposed) return;
     if (_startPoint != null && _endPoint != null && !_isRectangleDrawn) {
       _screenshotTimer = Timer.periodic(
-        const Duration(milliseconds: 500),
+        const Duration(milliseconds: 1000),
         (timer) {
           _captureScreenshot();
         },
