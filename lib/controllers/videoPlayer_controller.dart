@@ -85,7 +85,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
       // Safely pause and dispose of the controller
       await _controller.pause();
       await _controller.dispose();
-          _isDisposed = false;
+      _isDisposed = false;
       _showControls = true;
       _isFullscreen = false;
       _isMuted = false;
@@ -376,7 +376,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     final hours = duration.inHours;
     final minutes = duration.inMinutes.remainder(60);
     final seconds = duration.inSeconds.remainder(60);
-
     if (hours > 0) {
       return '$hours:${twoDigits(minutes)}:${twoDigits(seconds)}';
     } else {
@@ -435,7 +434,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     //reset translation
     resetTranslationState();
 
-
     // Clean up resources
     _hideControlsTimer?.cancel();
     _screenshotTimer?.cancel();
@@ -445,9 +443,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     } catch (e) {
       log('Error closing resources: $e');
     }
-    //
-    //
-    // // Reset properties
+    //  Reset properties
     // _videoDuration = Duration.zero;
     // _currentPosition = Duration.zero;
     // _isBuffering = false;
@@ -461,8 +457,6 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
     // _isPlaying = false;
     // _isFullscreen = false;
     // _isMuted = false;
-
-
     notifyListeners();
     super.dispose();
   }
