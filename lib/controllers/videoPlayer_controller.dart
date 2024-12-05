@@ -76,7 +76,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
   }
 
   // Added method to completely reset the controller state
-  Future<void> resetController() async {
+  Future<void> resetPreviousController() async {
     try {
       // Cancel any ongoing timers
       _hideControlsTimer?.cancel();
@@ -116,7 +116,7 @@ class VideoPlayerControllerProvider extends ChangeNotifier {
 
   Future<void> initializeController(
       String? getSelectedVideoPath, OnDeviceTranslator onDevice) async {
-    await resetController();
+    await resetPreviousController();
     if (getSelectedVideoPath == null || getSelectedVideoPath.isEmpty) {
       log('Video path is null or empty, cannot initialize controller');
       return;
