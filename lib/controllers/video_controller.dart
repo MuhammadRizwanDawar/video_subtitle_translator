@@ -25,14 +25,19 @@ class LanguageChooseController extends ChangeNotifier {
   Future<void> _initializeLanguageModels() async {
     isLoading = true;
     notifyListeners();
+    List<Future> modelChecks = [];
     for (String code in languageNames.keys) {
-      bool isDownloaded = await modelManager.isModelDownloaded(code);
-      downloadedModels[code] = isDownloaded;
-      notifyListeners();
+      modelChecks.add(
+        modelManager.isModelDownloaded(code).then((isDownloaded) {
+          downloadedModels[code] = isDownloaded;
+        }),
+      );
     }
+    await Future.wait(modelChecks);
     isLoading = false;
     notifyListeners();
   }
+
 
   // Method to download the language model if it is not already downloaded
   Future<void> downloadModel(String language, BuildContext context) async {

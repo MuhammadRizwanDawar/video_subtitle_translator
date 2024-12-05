@@ -76,12 +76,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                     children: [
                       Consumer<VideoPlayerControllerProvider>(
                         builder: (context, controller, _) {
-                          if (controller.controller.value.isInitialized) {
+                          if (controller.controller != null &&
+                              controller.controller!.value.isInitialized) {
                             return VideoPlayer(controller.controller!);
                           }
-
                           return const Center(
-                              child: CircularProgressIndicator());
+                            child: CircularProgressIndicator(),
+                          );
                         },
                       ),
                       Consumer<VideoPlayerControllerProvider>(
