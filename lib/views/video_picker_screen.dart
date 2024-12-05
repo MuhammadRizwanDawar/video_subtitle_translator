@@ -32,7 +32,7 @@ class _VideoPickerScreenState extends State<VideoPickerScreen> {
             fontWeight: FontWeight.bold,
           ),
         ),
-        backgroundColor: Color(0xff5565FD),
+        backgroundColor:Colors.blueAccent,
         elevation: 0,
         centerTitle: true,
       ),
@@ -87,7 +87,7 @@ class _VideoPickerScreenState extends State<VideoPickerScreen> {
                       }
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xff5565FD),
+                      backgroundColor: Colors.blueAccent,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(15),

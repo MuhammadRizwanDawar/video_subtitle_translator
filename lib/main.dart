@@ -11,7 +11,6 @@ Future<void> main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => LanguageChooseController()),
         ChangeNotifierProvider(create: (_) => VideoPlayerControllerProvider()),
-
       ],
       child: const MyApp(),
     ),
@@ -30,7 +29,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: VideoPickerScreen(),
+      home: const VideoPickerScreen(),
     );
   }
 }
