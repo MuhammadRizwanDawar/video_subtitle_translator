@@ -1,8 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:video_subtitle_translator/video_picker_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:video_subtitle_translator/controllers/video_controller.dart';
+import 'package:video_subtitle_translator/views/video_picker_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'controllers/videoPlayer_controller.dart';
+
+Future<void> main() async {
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LanguageChooseController()),
+        ChangeNotifierProvider(create: (_) => VideoPlayerControllerProvider()),
+
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -21,5 +34,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-
