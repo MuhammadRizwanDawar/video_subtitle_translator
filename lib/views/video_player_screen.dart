@@ -15,7 +15,7 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-  late VideoPlayerControllerProvider controllerdis;
+  late VideoPlayerControllerProvider controller;
   late LanguageChooseController languageChooseController;
 
   @override
@@ -25,16 +25,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       (_) {
         languageChooseController =
             Provider.of<LanguageChooseController>(context, listen: false);
-        controllerdis =
+        controller =
             Provider.of<VideoPlayerControllerProvider>(context, listen: false);
         String? getSelectedVideoPath =
             languageChooseController.getSelectedVideoPath();
         if (getSelectedVideoPath != null && getSelectedVideoPath.isNotEmpty) {
-          controllerdis.initializeTranslator(
+          controller.initializeTranslator(
               languageChooseController.sourceLanguage,
               languageChooseController.targetLanguage);
-          controllerdis.initializeController(
-              getSelectedVideoPath, controllerdis.onDeviceTranslator);
+          controller.initializeController(
+              getSelectedVideoPath, controller.onDeviceTranslator);
         } else {
           log("No video path selected.");
         }
@@ -44,7 +44,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
-    controllerdis.disposing();
+    controller.disposing();
     super.dispose();
   }
 
