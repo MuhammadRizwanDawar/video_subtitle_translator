@@ -25,8 +25,8 @@ class LanguageDropdownWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: Colors.grey.withOpacity(0.1),
-                blurRadius: 10,
+                color: Colors.grey.withOpacity(0.2),
+                blurRadius: 15,
                 spreadRadius: 2,
               ),
             ],
@@ -39,8 +39,8 @@ class LanguageDropdownWidget extends StatelessWidget {
                 child: Text(
                   title,
                   style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.blueGrey[700],
+                    fontSize: 18,
+                    color: Colors.blueGrey[800],
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -121,7 +121,7 @@ class LanguageDropdownWidget extends StatelessWidget {
               child: const Icon(
                 Icons.check_circle,
                 color: Colors.green,
-                size: 18,
+                size: 20,
               ),
             )
           : Container(
@@ -133,7 +133,7 @@ class LanguageDropdownWidget extends StatelessWidget {
               child: const Icon(
                 Icons.download,
                 color: Colors.blue,
-                size: 18,
+                size: 20,
               ),
             ),
     );
