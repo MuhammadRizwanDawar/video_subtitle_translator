@@ -172,7 +172,7 @@ class LanguageDropdownWidget extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Download $languageName Model',
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
                           color: Colors.black87,

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_subtitle_translator/controllers/video_controller.dart';
 import 'package:video_subtitle_translator/utlis/drawrec_custompaint.dart';
+import '../controllers/setting_controller.dart';
 import '../controllers/videoPlayer_controller.dart';
 import '../widgets/videocontrols_widgets.dart';
 
@@ -22,13 +23,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) {
+          (_) {
         languageChooseController =
             Provider.of<LanguageChooseController>(context, listen: false);
         controller =
             Provider.of<VideoPlayerControllerProvider>(context, listen: false);
         String? getSelectedVideoPath =
-            languageChooseController.getSelectedVideoPath();
+        languageChooseController.getSelectedVideoPath();
         if (getSelectedVideoPath != null && getSelectedVideoPath.isNotEmpty) {
           controller.initializeTranslator(
               languageChooseController.sourceLanguage,
@@ -120,18 +121,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   }
 
   Widget _buildTextDisplay(VideoPlayerControllerProvider controller) {
+    final settingsController = Provider.of<SettingsController>(context);
+
     if (controller.translatedText.isEmpty) {
       return const SizedBox.shrink();
     }
+
     return Positioned(
       left: 10,
       top: 20,
       child: Container(
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.8,
+          maxWidth: MediaQuery
+              .of(context)
+              .size
+              .width * 0.8,
         ),
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.8),
+          color: Color(settingsController.currentSettings.containerColor ??
+              Colors.black.value).withOpacity(
+            settingsController.currentSettings.containerOpacity ??
+                0.8, // Use default opacity if null
+          ),
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: Colors.white.withOpacity(0.3)),
         ),
@@ -153,9 +164,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
                 controller.translatedText.isEmpty
                     ? 'No text extracted or translated yet.'
                     : controller.translatedText,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+                style: TextStyle(
+                  color: Color(settingsController.currentSettings.textColor ??
+                      Colors.white.value), // Default color if null
+                  fontSize: settingsController.currentSettings.textSize ??
+                      16.0, // Default size if null
                 ),
                 overflow: TextOverflow.visible,
                 softWrap: true,

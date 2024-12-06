@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:video_subtitle_translator/views/setting_screen.dart';
 import '../controllers/video_controller.dart';
 import '../widgets/languagedropdown.dart';
 
@@ -35,6 +36,17 @@ class _VideoPickerScreenState extends State<VideoPickerScreen> {
         backgroundColor:Colors.blueAccent,
         elevation: 0,
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => SettingsScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
